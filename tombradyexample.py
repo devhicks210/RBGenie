@@ -1,7 +1,9 @@
 # Yes, I know I'm building a RB app. And yes, I know, this is Tom Brady. But the API I plan on using doesn't have statisical
-# data samples available for any position by QB, so, beggars can't be choosers. This code is simply to get a feel for the
+# data samples available for any position but QB, so, beggars can't be choosers. This code is simply to get a feel for the
 # JSON objects I'll be working with, accessing them as quickly and as efficiently as possible, and then working to include
 # SQL commands to post this back to a database for easier reference/calling/etc. to build my models from.
+
+# FULL DISCLOSURE: I think I can do this better, and will be continuing to massage it. Open to all advice!
 
 import json
 import requests
