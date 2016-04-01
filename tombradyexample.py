@@ -1,67 +1,72 @@
-# Yes, I know I'm building a RB app. And yes, I know, this is Tom Brady. But the API I plan on using doesn't have statisical
-# data samples available for any position but QB, so, beggars can't be choosers. This code is simply to get a feel for the
-# JSON objects I'll be working with, accessing them as quickly and as efficiently as possible, and then working to include
-# SQL commands to post this back to a database for easier reference/calling/etc. to build my models from.
-
-# FULL DISCLOSURE: I think I can do this better, and will be continuing to massage it. Open to all advice!
+# Importing libraries to handle API requests, SQL commands, and JSON object handling
 
 import json
+import pymysql
 import requests
 
-# Source of JSON object to access
-source = 'http://www.fantasyfootballnerd.com/service/player/json/test/13/'
+# API information
 
-# Retrival of that JSON object
-get_obj = requests.get(source)
+endpoint = "http://www.fantasyfootballnerd.com/service/player/json/"    # plus KEY, plus PLAYERID
+key = 'XXXXX'
 
-# Accessing the content of the JSON object
-obj_content = get_obj.content
+# Accessing SQL DB and looking into desired table
 
-# Final formating of the JSON object data to access
-data = json.loads(obj_content)
+conn = pymysql.connect(host='localhost', port=XXXXX, user='XXXXX', passwd='XXXXX', db='XXXXX')
+cur = conn.cursor()
+cur.execute("""SELECT player_id FROM rblist;""")
+rows = cur.fetchall()
 
-# Root of JSON object to use when iterating through the object
-statskey = data['Stats']
+# Creating a holder for all running back IDs, then filling it with said IDs
 
-# Defining a function that will iterate through the past 10 years of stats data
+rb_ids = []
+
+for row in rows:
+	for col in row:
+		rb_ids.append(str(col))
+
+# Creating a holder for running back API endpoints, then filling with with said completed endpoints
+
+rb_endpoints = []
+
+for x in rb_ids:
+	rb_endpoints.append(str(endpoint + key + x + "/"))
+
+# Defining functions to get the past 10 years worth of data for each of the 17 weeks of the NFL regular season
+
 def getYear():
 	for x in range(2005, 2016):
 		yield str(x)
 
-# Defining a function that will iterate through each of the 17 weeks of an NFL regular season
 def getWeek():
 	for x in range(1, 18):
 		yield str(x)
 
-# Storing the yearly and weekly functions in variables to make them iterable.
-# NOTE: I can't get BOTH to work in a single function, so my yearlyAccess has been hacked to take manual input of the year
-# with iterations through each week of the year.
 years = getYear()
 weeks = getWeek()
 
-# Defining a function that will take user input for the year, and then iterate through each of the 17 weeks to access 
-# each key value for each week of each year
-def yearlyAccess(year):
-	# Below is an example of how I'd execute this code *outside* of Sublime, which doesn't seem to play well with raw_input
-	# year = raw_input("Please insert the year, between 2005 and 2015, that'd you like to access.")
-	try:
-		for x in weeks:
-			root = statskey[str(year)][x]
-			
-			pass_att = int(root['passAttempts'])
-			pass_yds = int(root['passYards'])
-			pass_td = int(root['passTD'])
-			rush_att = int(root['rushAttempts'])
-			rush_yards = int(root['rushYards'])
-			rush_td = int(root['rushTD'])
-			completions = int(root['completions'])
+# Iterating through each API endpoint, hitting it, and getting the necessary data back.
 
-			# Example of possible of output, which should be able to be modified/added to with PyMySQL to post to a database table.
-			# Basically, I'd have a 2001 season table, and a column for each value. Once I've entered a year, the function would
-			# run and then populate each column as directed by the SQL command issued through PyMySQL (not present in this example)
-			print "Season: " + str(year) + ", " + "Week: " + str(x) + ", " + "Pass Attempts: " + str(pass_att) + " by Tom Brady"
+for x in rb_endpoints:
+	get_obj = requests.get(x)
+	obj_content = get_obj.content
+	data = json.loads(obj_content)
+	statskey = data['Stats']
+
+	try:
+		rush_att = int(statskey['2015']['1']['rushAttempts'])
+		rush_yards = int(statskey['2015']['1']['rushYards'])
+		rush_td = int(statskey['2015']['1']['rushTD'])
+		receptions = int(statskey['2015']['1']['receptions'])
+		rec_yards = int(statskey['2015']['1']['recYards'])
+		rec_td = int(statskey['2015']['1']['recTD'])
+		fum_lost = int(statskey['2015']['1']['fumbleLost'])
+
+		cur.execute("""INSERT INTO season_2015 (carries, rushyds, runtd, rec, recyds, rectd, fum)
+				VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s');""" % (rush_att, rush_yards, rush_td, receptions, rec_yards, rec_td, fum_lost))
+		conn.commit()
 
 	except:
 		pass
 
-yearlyAccess(2001)
+cur.close()
+conn.close()
