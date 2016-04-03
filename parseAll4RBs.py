@@ -6,7 +6,7 @@ import requests
 
 # API information
 
-endpoint = "http://www.fantasyfootballnerd.com/service/players/json/XXXXX/"    # plus KEY plus PLAYERID
+endpoint = "http://www.fantasyfootballnerd.com/service/players/json/XXXXX/"    # plus KEY
 
 # Accessing SQL DB and looking into desired table
 
